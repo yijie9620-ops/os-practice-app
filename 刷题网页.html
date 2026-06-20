@@ -1,0 +1,845 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>操作系统原理刷题网页</title>
+  <style>
+    :root {
+      --bg: #f4f6fa;
+      --panel: #fff;
+      --ink: #162033;
+      --muted: #667085;
+      --line: #d7deea;
+      --accent: #176b87;
+      --good: #2f7d32;
+      --bad: #b42318;
+      --soft: #edf5f8;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 24px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: 0;
+    }
+
+    button, select, label.file-btn {
+      min-height: 38px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button.primary {
+      color: #fff;
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    input[type=file] {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .bar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    main {
+      width: min(1180px, calc(100vw - 28px));
+      margin: 20px auto 44px;
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      gap: 16px;
+    }
+
+    aside, section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    aside {
+      height: fit-content;
+      padding: 16px;
+    }
+
+    section {
+      padding: 22px;
+      min-height: 560px;
+    }
+
+    .stat {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .stat strong { color: var(--ink); }
+
+    .hint {
+      margin: 14px 0 0;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .panel-title {
+      margin: 0 0 10px;
+      font-size: 16px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 260px;
+      resize: vertical;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font: 14px/1.6 Consolas, "Microsoft YaHei", monospace;
+    }
+
+    .import-panel {
+      display: grid;
+      gap: 12px;
+    }
+
+    .quiz-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .stem {
+      margin: 0 0 20px;
+      font-size: 22px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    .options {
+      display: grid;
+      gap: 12px;
+    }
+
+    .option {
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      align-items: start;
+      gap: 12px;
+      width: 100%;
+      min-height: 58px;
+      padding: 12px;
+      text-align: left;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .option:hover {
+      border-color: var(--accent);
+      background: var(--soft);
+    }
+
+    .option.correct {
+      border-color: var(--good);
+      background: #eef8ef;
+    }
+
+    .option.wrong {
+      border-color: var(--bad);
+      background: #fff1f0;
+    }
+
+    .key {
+      display: inline-grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #eef2f7;
+      font-weight: 700;
+    }
+
+    .feedback {
+      min-height: 30px;
+      margin-top: 18px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .hidden { display: none; }
+
+    @media (max-width: 780px) {
+      header {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 14px;
+      }
+
+      main {
+        grid-template-columns: 1fr;
+        width: min(100vw - 20px, 720px);
+      }
+
+      section { padding: 16px; }
+      .stem { font-size: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>操作系统原理刷题网页</h1>
+    <div class="bar">
+      <button id="showImportBtn">粘贴题目</button>
+      <label class="file-btn" for="pdfFile">导入 PDF</label>
+      <input id="pdfFile" type="file" accept=".pdf,application/pdf">
+      <label class="file-btn" for="docFile">导入 Word</label>
+      <input id="docFile" type="file" accept=".doc">
+      <label class="file-btn" for="jsonFile">导入 JSON</label>
+      <input id="jsonFile" type="file" accept=".json,application/json">
+      <button id="exportBtn">导出题库</button>
+      <select id="mode">
+        <option value="order">顺序</option>
+        <option value="random">随机</option>
+        <option value="wrong">错题</option>
+      </select>
+      <button id="resetBtn">重置记录</button>
+    </div>
+  </header>
+
+  <main>
+    <aside>
+      <div class="stat"><span>题目总数</span><strong id="total">0</strong></div>
+      <div class="stat"><span>已答</span><strong id="answered">0</strong></div>
+      <div class="stat"><span>正确</span><strong id="correct">0</strong></div>
+      <div class="stat"><span>错题</span><strong id="wrong">0</strong></div>
+      <div class="stat"><span>正确率</span><strong id="rate">0%</strong></div>
+      <p class="hint">用法：点击“导入 PDF”选择题库文件，网页会直接解析整份 PDF。也可以复制 PDF 文字后点“粘贴题目”。解析出的题库会保存在浏览器里，下次打开还在。</p>
+    </aside>
+
+    <section>
+      <div id="importPanel" class="import-panel">
+        <h2 class="panel-title">粘贴 PDF 里的选择题文本</h2>
+        <textarea id="rawText" placeholder="示例：
+1. 操作系统是一种什么软件？
+A. 应用软件
+B. 系统软件
+C. 工具软件
+D. 数据库软件
+答案：B"></textarea>
+        <div class="bar">
+          <button id="parseBtn" class="primary">解析并开始刷题</button>
+          <button id="loadDemoBtn">载入示例</button>
+        </div>
+        <p class="hint">支持常见格式：1.题干 + A/B/C/D 选项 + “答案：B”或“正确答案：B”。如果是这份《操作系统原理》PDF，直接点顶部“导入 PDF”即可识别黄色高亮答案。</p>
+      </div>
+
+      <div id="quizPanel" class="hidden">
+        <div class="quiz-head">
+          <span id="pos"></span>
+          <span id="stateText"></span>
+        </div>
+        <p id="stem" class="stem"></p>
+        <div id="options" class="options"></div>
+        <div id="feedback" class="feedback"></div>
+        <div class="nav">
+          <button id="prevBtn">上一题</button>
+          <button id="nextBtn" class="primary">下一题</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const demo = `1. 操作系统是一种什么软件？
+A. 应用软件
+B. 系统软件
+C. 工具软件
+D. 数据库软件
+答案：B
+
+2. 进程和程序的主要区别是？
+A. 程序是动态的，进程是静态的
+B. 进程是动态的，程序是静态的
+C. 二者完全相同
+D. 程序只能运行一次
+答案：B`;
+
+    const storeKey = "os_web_questions";
+    const answerKey = "os_web_answers";
+    const osAnswerMap = {"1":"C","2":"B","3":"A","4":"B","5":"D","6":"B","7":"B","8":"D","9":"C","10":"B","11":"C","12":"C","13":"B","14":"B","15":"A","16":"C","17":"C","18":"B","19":"D","20":"C","21":"C","22":"B","23":"B","24":"A","25":"A","26":"C","27":"A","28":"D","29":"C","30":"A","31":"C","32":"D","33":"D","34":"C","35":"B","36":"B","37":"A","38":"C","39":"C","40":"B","41":"C","42":"D","43":"C","44":"B","45":"A","46":"D","47":"A","48":"A","49":"D","50":"B","51":"A","52":"C","53":"A","54":"B","55":"C","56":"D","57":"B","58":"A","59":"B","60":"C","62":"C","64":"D","65":"A","66":"D","67":"A","68":"C","69":"B","70":"B","71":"B","72":"B","73":"C","74":"B","75":"D","76":"D","77":"D","78":"D","79":"B","80":"A","81":"A","82":"A","83":"C","84":"D","85":"C","86":"D","87":"A","88":"A","89":"B","90":"B","91":"D","92":"D","93":"C","94":"B","95":"A","96":"A","97":"D","98":"A","99":"A","100":"D","101":"B","102":"A","103":"A","104":"C","105":"D","106":"D","107":"B","108":"C","109":"B","110":"D","111":"D","112":"D","113":"B","114":"B","115":"B","116":"C","117":"C","118":"C","119":"C","120":"C","121":"D","122":"C","123":"C","124":"B","125":"D","126":"A","127":"B","128":"D","129":"B","130":"D","131":"B","132":"B","133":"C","134":"C","135":"A","137":"C","138":"A","139":"B","140":"C","141":"D","142":"A","143":"C","144":"B","145":"B","146":"B","147":"D","148":"D","149":"B","150":"D","151":"C","152":"C","153":"C","154":"C","155":"D","156":"D","157":"D","158":"C","159":"B","160":"B","161":"C","162":"A","163":"B","165":"B","166":"A"};
+    const state = {
+      questions: JSON.parse(localStorage.getItem(storeKey) || "[]"),
+      answers: JSON.parse(localStorage.getItem(answerKey) || "{}"),
+      order: [],
+      index: 0
+    };
+
+    const $ = id => document.getElementById(id);
+
+    function save() {
+      localStorage.setItem(storeKey, JSON.stringify(state.questions));
+      localStorage.setItem(answerKey, JSON.stringify(state.answers));
+    }
+
+    function parseQuestions(text) {
+      text = text.replace(/\r/g, "\n").replace(/[ \t\u3000]+/g, " ").trim();
+      const markers = [...text.matchAll(/(?:^|\n)\s*(\d+)\s*[\.、]\s*/g)];
+      const questions = [];
+
+      markers.forEach((match, i) => {
+        const start = match.index + match[0].length;
+        const end = i + 1 < markers.length ? markers[i + 1].index : text.length;
+        const block = text.slice(start, end).trim();
+        const answerMatch = block.match(/(?:答案|参考答案|正确答案)\s*[:：]?\s*([ABCD])/i);
+        const answer = answerMatch ? answerMatch[1].toUpperCase() : "";
+        const cleanBlock = answerMatch ? block.slice(0, answerMatch.index).trim() : block;
+        const optionMatches = [...cleanBlock.matchAll(/(?:^|\n|\s)([ABCD])\s*[\.、．]\s*/g)];
+        if (optionMatches.length < 2) return;
+
+        const firstOptionAt = optionMatches[0].index;
+        const stem = cleanBlock.slice(0, firstOptionAt).replace(/\s+/g, " ").trim();
+        const options = {};
+
+        optionMatches.forEach((optionMatch, optionIndex) => {
+          const key = optionMatch[1].toUpperCase();
+          const valueStart = optionMatch.index + optionMatch[0].length;
+          const valueEnd = optionIndex + 1 < optionMatches.length ? optionMatches[optionIndex + 1].index : cleanBlock.length;
+          options[key] = cleanBlock.slice(valueStart, valueEnd).replace(/\s+/g, " ").trim();
+        });
+
+        if (stem && Object.keys(options).length >= 2) {
+          questions.push({ id: String(match[1]), stem, options, answer });
+        }
+      });
+
+      return questions;
+    }
+
+    function buildOrder() {
+      const ids = state.questions.map((_, i) => i);
+      if ($("mode").value === "wrong") {
+        state.order = ids.filter(i => {
+          const q = state.questions[i];
+          return q.answer && state.answers[q.id] && state.answers[q.id] !== q.answer;
+        });
+      } else {
+        state.order = ids;
+      }
+
+      if ($("mode").value === "random") {
+        for (let i = state.order.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [state.order[i], state.order[j]] = [state.order[j], state.order[i]];
+        }
+      }
+      state.index = 0;
+    }
+
+    function current() {
+      const realIndex = state.order[state.index];
+      return Number.isInteger(realIndex) ? state.questions[realIndex] : null;
+    }
+
+    function stats() {
+      let answered = 0;
+      let correct = 0;
+      let wrong = 0;
+      state.questions.forEach(q => {
+        const picked = state.answers[q.id];
+        if (!picked) return;
+        answered += 1;
+        if (q.answer && picked === q.answer) correct += 1;
+        if (q.answer && picked !== q.answer) wrong += 1;
+      });
+      $("total").textContent = state.questions.length;
+      $("answered").textContent = answered;
+      $("correct").textContent = correct;
+      $("wrong").textContent = wrong;
+      $("rate").textContent = answered ? Math.round(correct / answered * 100) + "%" : "0%";
+    }
+
+    function render() {
+      stats();
+      const q = current();
+      $("importPanel").classList.toggle("hidden", Boolean(q));
+      $("quizPanel").classList.toggle("hidden", !q);
+      if (!q) {
+        if (state.questions.length && $("mode").value === "wrong") {
+          $("rawText").placeholder = "目前没有错题，可以切回顺序或随机模式。";
+        }
+        return;
+      }
+
+      const picked = state.answers[q.id];
+      $("pos").textContent = `第 ${state.index + 1} / ${state.order.length} 题`;
+      $("stateText").textContent = picked ? `已选 ${picked}` : "未作答";
+      $("stem").textContent = q.stem;
+      $("options").innerHTML = "";
+
+      Object.entries(q.options).forEach(([key, value]) => {
+        const btn = document.createElement("button");
+        btn.className = "option";
+        if (picked && q.answer) {
+          if (key === q.answer) btn.classList.add("correct");
+          if (key === picked && picked !== q.answer) btn.classList.add("wrong");
+        } else if (picked === key) {
+          btn.classList.add("correct");
+        }
+        btn.innerHTML = `<span class="key">${key}</span><span></span>`;
+        btn.querySelector("span:last-child").textContent = value;
+        btn.onclick = () => {
+          state.answers[q.id] = key;
+          save();
+          render();
+        };
+        $("options").appendChild(btn);
+      });
+
+      $("feedback").textContent = !picked
+        ? (q.answer ? "请选择一个选项。" : "这题没有解析到答案，选择后只记录。")
+        : (!q.answer ? `已记录：${picked}` : picked === q.answer ? "回答正确。" : `回答错误，正确答案是 ${q.answer}。`);
+
+      $("prevBtn").disabled = state.index <= 0;
+      $("nextBtn").disabled = state.index >= state.order.length - 1;
+    }
+
+    $("parseBtn").onclick = () => {
+      const parsed = parseQuestions($("rawText").value);
+      if (!parsed.length) {
+        alert("没有解析到题目。请确认文本里有题号、A/B/C/D 选项。");
+        return;
+      }
+      state.questions = parsed;
+      state.answers = {};
+      buildOrder();
+      save();
+      render();
+    };
+
+    $("loadDemoBtn").onclick = () => {
+      $("rawText").value = demo;
+    };
+
+    $("showImportBtn").onclick = () => {
+      $("quizPanel").classList.add("hidden");
+      $("importPanel").classList.remove("hidden");
+    };
+
+    $("jsonFile").onchange = async event => {
+      const file = event.target.files[0];
+      if (!file) return;
+      state.questions = JSON.parse(await file.text());
+      state.answers = {};
+      buildOrder();
+      save();
+      render();
+    };
+
+    $("pdfFile").onchange = async event => {
+      const file = event.target.files[0];
+      if (!file) return;
+      try {
+        const questions = await parsePdfQuestions(await file.arrayBuffer());
+        if (!questions.length) {
+          alert("没有从 PDF 里解析到题目。");
+          return;
+        }
+        state.questions = questions;
+        state.answers = {};
+        buildOrder();
+        save();
+        alert(`已解析 ${questions.length} 道题。现在可以刷题，也可以点“导出题库”保存 JSON。`);
+        render();
+      } catch (error) {
+        console.error(error);
+        alert("PDF 解析失败：" + error.message);
+      }
+    };
+
+    $("exportBtn").onclick = () => {
+      const blob = new Blob([JSON.stringify(state.questions, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "操作系统原理题库.json";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    };
+
+    $("mode").onchange = () => {
+      buildOrder();
+      render();
+    };
+
+    $("resetBtn").onclick = () => {
+      if (!confirm("确定清空答题记录吗？")) return;
+      state.answers = {};
+      save();
+      render();
+    };
+
+    $("prevBtn").onclick = () => {
+      state.index = Math.max(0, state.index - 1);
+      render();
+    };
+
+    $("nextBtn").onclick = () => {
+      state.index = Math.min(state.order.length - 1, state.index + 1);
+      render();
+    };
+
+    window.onkeydown = event => {
+      const q = current();
+      if (!q) return;
+      const key = event.key.toUpperCase();
+      if ("ABCD".includes(key)) {
+        state.answers[q.id] = key;
+        save();
+        render();
+      }
+      if (event.key === "ArrowLeft") $("prevBtn").click();
+      if (event.key === "ArrowRight") $("nextBtn").click();
+    };
+
+    buildOrder();
+    render();
+
+    async function parsePdfQuestions(arrayBuffer) {
+      const bytes = new Uint8Array(arrayBuffer);
+      const latin = Array.from(bytes, byte => String.fromCharCode(byte)).join("");
+      const streams = [];
+      const cmap = {};
+      const streamRe = /(\d+)\s+(\d+)\s+obj\s*<<(.*?)>>\s*stream\r?\n([\s\S]*?)\r?\nendstream/g;
+      let match;
+
+      while ((match = streamRe.exec(latin))) {
+        const dict = match[3];
+        let text = match[4];
+        if (dict.includes("FlateDecode")) {
+          const data = Uint8Array.from(text, ch => ch.charCodeAt(0));
+          text = await inflateZlib(data);
+        }
+        streams.push(text);
+        if (text.includes("beginbfchar") || text.includes("beginbfrange")) {
+          Object.assign(cmap, parseCMap(text));
+        }
+      }
+
+      const allLines = [];
+      let page = 0;
+      streams.forEach(stream => {
+        if (!/\bBT\b/.test(stream) || stream.includes("begincmap")) return;
+        page += 1;
+        allLines.push(...extractPageLines(stream, page, cmap));
+      });
+
+      return buildQuestionsFromLines(allLines);
+    }
+
+    async function inflateZlib(data) {
+      if ("DecompressionStream" in window) {
+        try {
+          const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate"));
+          const inflated = new Uint8Array(await new Response(stream).arrayBuffer());
+          return Array.from(inflated, byte => String.fromCharCode(byte)).join("");
+        } catch {
+          const raw = data.slice(2, -4);
+          const stream = new Blob([raw]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+          const inflated = new Uint8Array(await new Response(stream).arrayBuffer());
+          return Array.from(inflated, byte => String.fromCharCode(byte)).join("");
+        }
+      }
+
+      let pos = 0;
+      const cmf = data[pos++];
+      const flg = data[pos++];
+      if ((cmf & 15) !== 8 || (((cmf << 8) + flg) % 31) !== 0) {
+        throw new Error("不支持的 PDF 压缩格式");
+      }
+      if (flg & 32) pos += 4;
+
+      const out = [];
+      let bitbuf = 0;
+      let bitcnt = 0;
+      const lenBase = [3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258];
+      const lenExtra = [0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0];
+      const distBase = [1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577];
+      const distExtra = [0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13];
+
+      const readBits = count => {
+        while (bitcnt < count) {
+          bitbuf |= data[pos++] << bitcnt;
+          bitcnt += 8;
+        }
+        const value = bitbuf & ((1 << count) - 1);
+        bitbuf >>= count;
+        bitcnt -= count;
+        return value;
+      };
+      const reverse = (value, bits) => {
+        let out = 0;
+        for (let i = 0; i < bits; i++) out = (out << 1) | ((value >> i) & 1);
+        return out;
+      };
+      const makeTree = lengths => {
+        let max = Math.max(...lengths);
+        const tree = {};
+        let code = 0;
+        const blCount = Array(max + 1).fill(0);
+        lengths.forEach(length => { if (length) blCount[length] += 1; });
+        for (let bits = 1; bits <= max; bits++) {
+          code = (code + blCount[bits - 1]) << 1;
+          for (let n = 0; n < lengths.length; n++) {
+            if (lengths[n] === bits) tree[bits + ":" + reverse(code++, bits)] = n;
+          }
+        }
+        return { tree, max };
+      };
+      const decodeSym = table => {
+        let code = 0;
+        for (let bits = 1; bits <= table.max; bits++) {
+          code |= readBits(1) << (bits - 1);
+          const hit = table.tree[bits + ":" + code];
+          if (hit !== undefined) return hit;
+        }
+        throw new Error("PDF 压缩数据损坏");
+      };
+      const fixed = () => {
+        const lit = Array(288).fill(0).map((_, i) => i <= 143 ? 8 : i <= 255 ? 9 : i <= 279 ? 7 : 8);
+        return [makeTree(lit), makeTree(Array(32).fill(5))];
+      };
+
+      let last = 0;
+      while (!last) {
+        last = readBits(1);
+        const type = readBits(2);
+        let litTree;
+        let distTree;
+
+        if (type === 0) {
+          bitbuf = 0; bitcnt = 0;
+          const len = data[pos] | (data[pos + 1] << 8);
+          pos += 4;
+          for (let i = 0; i < len; i++) out.push(data[pos++]);
+          continue;
+        }
+        if (type === 1) {
+          [litTree, distTree] = fixed();
+        } else if (type === 2) {
+          const hlit = readBits(5) + 257;
+          const hdist = readBits(5) + 1;
+          const hclen = readBits(4) + 4;
+          const order = [16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];
+          const clen = Array(19).fill(0);
+          for (let i = 0; i < hclen; i++) clen[order[i]] = readBits(3);
+          const clenTree = makeTree(clen);
+          const lengths = [];
+          while (lengths.length < hlit + hdist) {
+            const sym = decodeSym(clenTree);
+            if (sym <= 15) lengths.push(sym);
+            else if (sym === 16) lengths.push(...Array(readBits(2) + 3).fill(lengths[lengths.length - 1] || 0));
+            else if (sym === 17) lengths.push(...Array(readBits(3) + 3).fill(0));
+            else lengths.push(...Array(readBits(7) + 11).fill(0));
+          }
+          litTree = makeTree(lengths.slice(0, hlit));
+          distTree = makeTree(lengths.slice(hlit));
+        } else {
+          throw new Error("不支持的 PDF 压缩块");
+        }
+
+        while (true) {
+          const sym = decodeSym(litTree);
+          if (sym < 256) out.push(sym);
+          else if (sym === 256) break;
+          else {
+            const li = sym - 257;
+            const len = lenBase[li] + readBits(lenExtra[li]);
+            const ds = decodeSym(distTree);
+            const dist = distBase[ds] + readBits(distExtra[ds]);
+            for (let i = 0; i < len; i++) out.push(out[out.length - dist]);
+          }
+        }
+      }
+      return Array.from(out, byte => String.fromCharCode(byte)).join("");
+    }
+
+    function parseCMap(text) {
+      const map = {};
+      const decodeUtf16Hex = hex => {
+        hex = hex.replace(/\s+/g, "");
+        let value = "";
+        for (let i = 0; i < hex.length; i += 4) value += String.fromCharCode(parseInt(hex.slice(i, i + 4), 16));
+        return value;
+      };
+      for (const block of text.matchAll(/beginbfchar([\s\S]*?)endbfchar/g)) {
+        for (const item of block[1].matchAll(/<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>/g)) {
+          map[item[1].toUpperCase()] = decodeUtf16Hex(item[2]);
+        }
+      }
+      for (const block of text.matchAll(/beginbfrange([\s\S]*?)endbfrange/g)) {
+        for (const item of block[1].matchAll(/<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>/g)) {
+          const start = parseInt(item[1], 16);
+          const end = parseInt(item[2], 16);
+          const dst = parseInt(item[3], 16);
+          for (let code = start; code <= end; code++) {
+            map[code.toString(16).toUpperCase().padStart(item[1].length, "0")] = String.fromCharCode(dst + code - start);
+          }
+        }
+      }
+      return map;
+    }
+
+    function extractPageLines(stream, page, cmap) {
+      const rects = [];
+      for (const r of stream.matchAll(/1\s+1\s+0\s+rg\s*\r?\n\s*(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+re\s*\r?\n\s*f\*/g)) {
+        rects.push({ x: Number(r[1]), y: Number(r[2]), w: Number(r[3]), h: Number(r[4]) });
+      }
+      const decodeHex = hex => {
+        hex = hex.replace(/\s+/g, "").toUpperCase();
+        let value = "";
+        for (let i = 0; i < hex.length; i += 4) value += cmap[hex.slice(i, i + 4)] || "";
+        return value;
+      };
+      const pdfLiteral = text => text.replace(/\\([nrtbf()\\])/g, (_, c) => ({ n: "\n", r: "\r", t: "\t", b: "\b", f: "\f", "(": "(", ")": ")", "\\": "\\" }[c] || c));
+      const decodeExpr = expr => {
+        let value = "";
+        const re = /<([0-9A-Fa-f\s]+)>|\((?:\\.|[^\\)])*\)/g;
+        let match;
+        while ((match = re.exec(expr))) value += match[1] ? decodeHex(match[1]) : pdfLiteral(match[0].slice(1, -1));
+        return value;
+      };
+      const chunks = [];
+      for (const block of stream.matchAll(/BT([\s\S]*?)ET/g)) {
+        const body = block[1];
+        const tm = [...body.matchAll(/(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+Tm/g)].pop();
+        const x = tm ? Number(tm[5]) : 0;
+        const y = tm ? Number(tm[6]) : 0;
+        let text = "";
+        for (const tj of body.matchAll(/\[([\s\S]*?)\]\s*TJ/g)) text += decodeExpr(tj[1]);
+        for (const t of body.matchAll(/(<[0-9A-Fa-f\s]+>|\((?:\\.|[^\\)])*\))\s*Tj/g)) text += decodeExpr(t[1]);
+        if (text.trim()) chunks.push({ x, y, text });
+      }
+      chunks.sort((a, b) => Math.abs(b.y - a.y) > 2 ? b.y - a.y : a.x - b.x);
+      const lines = [];
+      chunks.forEach(chunk => {
+        let line = lines.find(item => Math.abs(item.y - chunk.y) < 2);
+        if (!line) lines.push(line = { page, y: chunk.y, parts: [] });
+        line.parts.push(chunk);
+      });
+      return lines.map(line => {
+        line.parts.sort((a, b) => a.x - b.x);
+        const firstX = line.parts[0]?.x || 0;
+        return {
+          page,
+          y: line.y,
+          text: line.parts.map(part => part.text).join("").replace(/\s+/g, " ").trim(),
+          highlight: rects.some(r => line.y >= r.y - 1 && line.y <= r.y + r.h + 1 && firstX >= r.x - 2 && firstX <= r.x + r.w + 5)
+        };
+      }).filter(line => line.text).sort((a, b) => b.y - a.y);
+    }
+
+    function buildQuestionsFromLines(lines) {
+      const questions = [];
+      let question = null;
+      let currentOpt = null;
+      let ignoringNote = false;
+      const clean = text => text.replace(/\s+/g, " ").replace(/[ ]+([，。；：？！、）])/g, "$1").replace(/([（])[ ]+/g, "$1").trim();
+      const finish = () => {
+        if (!question) return;
+        Object.keys(question.options).forEach(key => question.options[key] = clean(question.options[key]));
+        question.stem = clean(question.stem);
+        if (question.stem && Object.keys(question.options).length >= 2) questions.push(question);
+      };
+
+      lines.forEach(line => {
+        const text = line.text;
+        if (/^操作系统原理/.test(text)) return;
+        const questionMatch = text.match(/^(\d+)\s*[.、]\s*(.*)$/);
+        if (questionMatch) {
+          finish();
+          question = { id: Number(questionMatch[1]), stem: questionMatch[2] || "", options: {}, answer: "" };
+          currentOpt = null;
+          ignoringNote = false;
+          return;
+        }
+        if (!question) return;
+        if (/^注[:：]/.test(text)) {
+          ignoringNote = true;
+          currentOpt = null;
+          return;
+        }
+        if (ignoringNote) return;
+        const optionMatch = text.match(/^([ABCD])\s*[.．、]\s*(.*)$/i);
+        if (optionMatch) {
+          currentOpt = optionMatch[1].toUpperCase();
+          question.options[currentOpt] = (question.options[currentOpt] ? question.options[currentOpt] + " " : "") + optionMatch[2];
+          if (line.highlight) question.answer = currentOpt;
+          return;
+        }
+        if (currentOpt && Object.keys(question.options).length < 4) question.options[currentOpt] += " " + text;
+        else if (!currentOpt) question.stem += " " + text;
+      });
+      finish();
+
+      const seen = new Set();
+      return questions.filter(item => {
+        if (seen.has(item.id)) return false;
+        seen.add(item.id);
+        return true;
+      });
+    }
+  </script>
+</body>
+</html>
