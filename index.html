@@ -553,8 +553,26 @@ D. 程序只能运行一次
       if (event.key === "ArrowRight") $("nextBtn").click();
     };
 
+// 自动加载远程题库
+if (state.questions.length === 0) {
+    fetch('https://yijie9620-ops.github.io/os-practice-app/操作系统原理题库.json')
+        .then(response => response.json())
+        .then(data => {
+            state.questions = data;
+            state.answers = JSON.parse(localStorage.getItem(answerKey) || "{}");
+            buildOrder();
+            save();
+            render();
+            console.log('✅ 题库已加载，共 ' + data.length + ' 道题');
+        })
+        .catch(error => {
+            console.error('题库加载失败:', error);
+            alert('题库加载失败，请检查网络连接。');
+        });
+} else {
     buildOrder();
     render();
+}
 
     async function parsePdfQuestions(arrayBuffer) {
       const bytes = new Uint8Array(arrayBuffer);
